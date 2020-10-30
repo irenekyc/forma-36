@@ -1,7 +1,8 @@
-import React, { forwardRef, useCallback, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef } from 'react';
 import cn from 'classnames';
 import ReactDOM from 'react-dom';
 
+import { useOnClickOutside } from '../../../utils/useOnClickOutside';
 import { positionType } from '../Dropdown';
 import styles from './DropdownContainer.css';
 
@@ -47,35 +48,25 @@ export const DropdownContainer = forwardRef<
     const portalTarget = useRef<HTMLDivElement>(document.createElement('div'));
     const classNames = cn(className, styles['DropdownContainer']);
 
-    const trackOutsideClick = useCallback(
-      (event: MouseEvent) => {
-        if (
-          isOpen &&
-          onClose &&
-          dropdown.current &&
-          !dropdown.current.contains(event.target as Node)
-        ) {
-          onClose();
-        }
-      },
-      [isOpen, onClose],
-    );
+    useOnClickOutside(dropdown, (event) => {
+      if (isOpen && onClose) {
+        event.stopImmediatePropagation();
+
+        onClose(event);
+      }
+    });
 
     useEffect(() => {
       if (isOpen) {
         const portalContainer = portalTarget.current;
 
         document.body.appendChild(portalContainer);
-        document.addEventListener('click', trackOutsideClick, {
-          passive: true,
-        });
 
         return () => {
           document.body.removeChild(portalContainer);
-          document.removeEventListener('click', trackOutsideClick, {});
         };
       }
-    }, [isOpen, trackOutsideClick]);
+    }, [isOpen]);
 
     useEffect(() => {
       if (getRef && dropdown.current) {
